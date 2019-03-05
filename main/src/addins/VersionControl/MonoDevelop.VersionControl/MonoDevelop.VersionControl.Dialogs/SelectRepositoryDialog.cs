@@ -25,6 +25,8 @@ namespace MonoDevelop.VersionControl.Dialogs
 		List<Repository> loadingRepos = new List<Repository> ();
 		IRepositoryEditor currentEditor;
 		string defaultPath;
+		bool hasChanges;
+
 		public readonly ConfigurationProperty<string> VersionControlDefaultPath = ConfigurationProperty.Create ("MonoDevelop.VersionControl.Dialogs.SelectRepositoryDialog.DefaultPath", System.IO.Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.Personal), "Projects"));
 
 		const int RepositoryCol = 0;
@@ -32,21 +34,23 @@ namespace MonoDevelop.VersionControl.Dialogs
 		const int VcsName = 2;
 		const int FilledCol = 3;
 		const int IconCol = 4;
-		
-		public SelectRepositoryDialog (SelectRepositoryMode mode)
+
+		public SelectRepositoryDialog (SelectRepositoryMode mode, Repository repo = null, bool hasChanges = true)
 		{
 			Build ();
-			
+
 			foreach (VersionControlSystem vcs in VersionControlService.GetVersionControlSystems ()) {
 				if (vcs.IsInstalled) {
 					repCombo.AppendText (vcs.Name);
 					systems.Add (vcs);
 				}
 			}
-			repCombo.Active = 0;
+
 			this.mode = mode;
-			
-			store = new Gtk.TreeStore (typeof(object), typeof(string), typeof(string), typeof(bool), typeof(string));
+			this.repo = repo;
+			this.hasChanges = hasChanges;
+
+			store = new Gtk.TreeStore (typeof (object), typeof (string), typeof (string), typeof (bool), typeof (string));
 			repoTree.Model = store;
 			TreeViewColumn col = new TreeViewColumn ();
 			col.Title = GettextCatalog.GetString ("Repository");
@@ -74,6 +78,26 @@ namespace MonoDevelop.VersionControl.Dialogs
 				labelTargetDir.Visible = false;
 				boxFolder.Visible = false;
 			}
+
+			if (this.repo != null) {
+				notebook.RemovePage (1);    // Remove "Registered Repositories" Tab.
+				hbox1.Visible = false;      // Hide VCS selector.
+
+				// Select "Git"
+				Gtk.TreeIter iter;
+				repCombo.Model.GetIterFirst (out iter);
+				do {
+					GLib.Value thisRow = new GLib.Value ();
+					repCombo.Model.GetValue (iter, 0, ref thisRow);
+					if ((thisRow.Val as string).Equals ("Git")) {
+						repCombo.SetActiveIter (iter);
+						break;
+					}
+				} while (repCombo.Model.IterNext (ref iter));
+
+				table1.Visible &= this.hasChanges;
+			} else
+				repCombo.Active = 0;
 
 			repoContainer.SetFlag (WidgetFlags.NoWindow);
 		}
@@ -131,7 +155,17 @@ namespace MonoDevelop.VersionControl.Dialogs
 				return;
 
 			VersionControlSystem vcs = systems [repCombo.Active];
-			repo = vcs.CreateRepositoryInstance ();
+
+			if (repo == null) {
+				repo = vcs.CreateRepositoryInstance ();
+			} else {
+				if (repo is UrlBasedRepository) {
+					var newRepo = vcs.CreateRepositoryInstance ();
+					((UrlBasedRepository)repo).Url = ((UrlBasedRepository)newRepo).Url;
+					newRepo = null;
+				}
+			}
+
 			currentEditor = vcs.CreateRepositoryEditor (repo);
 			repoContainer.Add (currentEditor.Widget);
 			currentEditor.Show ();

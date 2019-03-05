@@ -21,26 +21,47 @@ namespace MonoDevelop.VersionControl
 				return VersionControlService.CheckVersionControlInstalled () && VersionControlService.GetRepository (entry) == null;
 			}
 
+			string moduleName = entry.Name;
+			Repository repository = VersionControlService.GetRepository (entry);
+			bool isInitialized = repository != null;
 			List<FilePath> files = new List<FilePath> ();
 
-			// Build the list of files to be checked in			
-			string moduleName = entry.Name;
-			if (localPath == entry.BaseDirectory) {
-				GetFiles (files, entry);
-			} else if (entry is Project) {
-				foreach (ProjectFile file in ((Project)entry).Files.GetFilesInPath (localPath))
-					if (file.Subtype != Subtype.Directory)
-						files.Add (file.FilePath);
-			} else
-				return false;
+			if (!isInitialized) {
+				// Build the list of files to be checked in			
+				if (localPath == entry.BaseDirectory) {
+					GetFiles (files, entry);
+				} else if (entry is Project) {
+					foreach (ProjectFile file in ((Project)entry).Files.GetFilesInPath (localPath))
+						if (file.Subtype != Subtype.Directory)
+							files.Add (file.FilePath);
+				} else
+					return false;
 
-			if (files.Count == 0)
-				return false;
-	
-			SelectRepositoryDialog dlg = new SelectRepositoryDialog (SelectRepositoryMode.Publish);
+				if (files.Count == 0)
+					return false;
+			}
+
+			var directoryVersionInfo = repository.GetDirectoryVersionInfo (localPath, true, true);
+			bool hasChanges = directoryVersionInfo.Any(vi => vi.HasLocalChanges);
+
+			if(hasChanges) {
+				foreach (var vi in directoryVersionInfo.Where(vi => vi.HasLocalChanges)) {
+					files.Add (vi.LocalPath);
+				}
+			}
+
+			SelectRepositoryDialog dlg = new SelectRepositoryDialog (SelectRepositoryMode.Publish, repository, hasChanges);
+			dlg.ModuleName = moduleName;
+
 			try {
-				dlg.ModuleName = moduleName;
-				dlg.Message = GettextCatalog.GetString ("Initial check-in of module {0}", moduleName);
+				if (!isInitialized) {
+					dlg.Message = GettextCatalog.GetString ("Initial check-in of module {0}", moduleName);
+				} else {
+					if (hasChanges) {
+						dlg.Message = GettextCatalog.GetString ("Check-in of module {0}", moduleName);
+					}
+				}
+
 				do {
 					if (MessageService.RunCustomDialog (dlg) == (int) Gtk.ResponseType.Ok && dlg.Repository != null) {
 						AlertButton publishButton = new AlertButton (GettextCatalog.GetString ("_Publish"));
