@@ -2772,6 +2772,9 @@ namespace MonoDevelop.Projects
 			// Read available item types
 
 			loadedAvailableItemNames = msproject.EvaluatedItems.Where (i => i.Name == "AvailableItemName").Select (i => i.Include).ToArray ();
+
+			// Ensure buildActions are refreshed if loadedAvailableItemNames have been updated.
+			buildActions = null;
 		}
 
 		List<ConfigData> GetConfigData (MSBuildProject msproject, bool includeEvaluated)
@@ -4414,7 +4417,7 @@ namespace MonoDevelop.Projects
 
 		void OnFileRenamed (object sender, FileCopyEventArgs e)
 		{
-			foreach (FileCopyEventInfo info in e) {
+			foreach (FileEventInfo info in e) {
 				OnFileRenamed (info.SourceFile, info.TargetFile);
 			}
 		}

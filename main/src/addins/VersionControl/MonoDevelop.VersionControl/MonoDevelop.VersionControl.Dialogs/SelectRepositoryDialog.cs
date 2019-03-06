@@ -39,6 +39,8 @@ namespace MonoDevelop.VersionControl.Dialogs
 		{
 			Build ();
 
+			GtkWorkarounds.DisableMinimizeMaximizeButtons (this);
+			Modal = true;
 			foreach (VersionControlSystem vcs in VersionControlService.GetVersionControlSystems ()) {
 				if (vcs.IsInstalled) {
 					repCombo.AppendText (vcs.Name);
@@ -83,13 +85,12 @@ namespace MonoDevelop.VersionControl.Dialogs
 				notebook.RemovePage (1);    // Remove "Registered Repositories" Tab.
 				hbox1.Visible = false;      // Hide VCS selector.
 
-				// Select "Git"
 				Gtk.TreeIter iter;
 				repCombo.Model.GetIterFirst (out iter);
 				do {
 					GLib.Value thisRow = new GLib.Value ();
 					repCombo.Model.GetValue (iter, 0, ref thisRow);
-					if ((thisRow.Val as string).Equals ("Git")) {
+					if ((thisRow.Val as string).Equals (repo.VersionControlSystem.Name)) {
 						repCombo.SetActiveIter (iter);
 						break;
 					}
@@ -423,7 +424,7 @@ namespace MonoDevelop.VersionControl.Dialogs
 
 		void AppendRelativePath ()
 		{
-			UrlBasedRepositoryEditor edit = currentEditor as UrlBasedRepositoryEditor;
+			var edit = currentEditor as UrlBasedRepositoryEditor;
 			if (edit == null)
 				return;
 
@@ -433,7 +434,8 @@ namespace MonoDevelop.VersionControl.Dialogs
 				return;
 			}
 
-			entryFolder.Text = defaultPath + edit.RelativePath.Replace ('/', System.IO.Path.DirectorySeparatorChar);
+			var vcs = systems [repCombo.Active];
+			entryFolder.Text = defaultPath + vcs.GetRelativeCheckoutPathForRemote (edit.RelativePath);
 		}
 	}
 }

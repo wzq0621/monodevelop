@@ -997,9 +997,9 @@ namespace MonoDevelop.Ide
 		internal void NotifyItemAdded (WorkspaceItem item)
 		{
 			MonoDevelop.Ide.TypeSystem.TypeSystemService.Load (item, null).ContinueWith(t => {
-				if (t.IsFaulted)
-					LoggingService.LogError("Could not load parser database.", t.Exception);
-			});
+				LoggingService.LogError("Could not load parser database.", t.Exception);
+			}, TaskContinuationOptions.OnlyOnFaulted);
+
 			if (Runtime.IsMainThread)
 				NotifyItemAddedGui (item, IsReloading);
 			else {
@@ -1239,7 +1239,7 @@ namespace MonoDevelop.Ide
 				return;
 
 			foreach (Solution sol in GetAllSolutions ()) {
-				foreach (FileCopyEventInfo e in args)
+				foreach (FileEventInfo e in args)
 					sol.RootFolder.RenameFileInProjects (e.SourceFile, e.TargetFile);
 			}
 		}

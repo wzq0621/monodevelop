@@ -32,8 +32,20 @@ namespace MonoDevelop.VersionControl.Git
 {
 	abstract class GitVersionControl : VersionControlSystem
 	{
+		string version = null;
+
+		const string GitExtension = ".git";
+
 		public override string Name {
 			get { return "Git"; }
+		}
+
+		public override string Version {
+			get {
+				if (version == null)
+					version = LibGit2Sharp.GlobalSettings.Version.InformationalVersion;
+				return version;
+			}
 		}
 
 		public override bool IsInstalled {
@@ -62,10 +74,19 @@ namespace MonoDevelop.VersionControl.Git
 			string repo = LibGit2Sharp.Repository.Discover (path.ResolveLinks ());
 			if (!string.IsNullOrEmpty (repo)) {
 				repo = repo.TrimEnd ('\\', '/');
-				if (repo.EndsWith (".git", System.StringComparison.OrdinalIgnoreCase))
+				if (repo.EndsWith (GitExtension, System.StringComparison.OrdinalIgnoreCase))
 					repo = Path.GetDirectoryName (repo);
 			}
 			return repo;
+		}
+
+		public override string GetRelativeCheckoutPathForRemote (string remoteRelativePath)
+		{
+			remoteRelativePath = base.GetRelativeCheckoutPathForRemote (remoteRelativePath);
+			if (remoteRelativePath.EndsWith (GitExtension, System.StringComparison.CurrentCultureIgnoreCase)) {
+				remoteRelativePath = remoteRelativePath.Substring (0, remoteRelativePath.Length - GitExtension.Length);
+			} 
+			return remoteRelativePath;
 		}
 	}
 }
