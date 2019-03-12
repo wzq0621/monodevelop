@@ -2,20 +2,20 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Collections;
 using System.Collections.Generic;
 using MonoDevelop.Core.Serialization;
 using MonoDevelop.Core;
 using System.Linq;
 using System.Threading;
-using MonoDevelop.Core.Instrumentation;
 using MonoDevelop.Ide;
+using MonoDevelop.Projects;
 
 namespace MonoDevelop.VersionControl
 {
 	[DataItem (FallbackType=typeof(UnknownRepository))]
 	public abstract class Repository: IDisposable
 	{
+		FilePath filePath;
 		string name;
 		VersionControlSystem vcs;
 		
@@ -26,8 +26,11 @@ namespace MonoDevelop.VersionControl
 
 		public FilePath RootPath
 		{
-			get;
-			protected set;
+			get { return filePath; }
+			protected set {
+				filePath = value;
+				InitFileWatcher (filePath);
+			}
 		}
 		
 		public event EventHandler NameChanged;
@@ -105,6 +108,8 @@ namespace MonoDevelop.VersionControl
 
 			infoCache?.Dispose ();
 			infoCache = null;
+
+			ShutdownFileWatcher ();
 		}
 
 		public void Dispose ()
@@ -1051,6 +1056,20 @@ namespace MonoDevelop.VersionControl
 		public virtual bool GetFileIsText (FilePath path)
 		{
 			return DesktopService.GetFileIsText (path);
+		}
+
+		void InitFileWatcher (FilePath directoryPath)
+		{
+			FileWatcherService.WatchDirectories (this, new HashSet<FilePath> {
+				directoryPath
+			}).Ignore ();
+		}
+
+		void ShutdownFileWatcher()
+		{
+			FileWatcherService.WatchDirectories (this, new HashSet<FilePath> {
+				null
+			}).Ignore ();
 		}
 	}
 	
