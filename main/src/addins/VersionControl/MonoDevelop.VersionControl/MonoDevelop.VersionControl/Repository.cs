@@ -98,6 +98,8 @@ namespace MonoDevelop.VersionControl
 		{
 			IsDisposed = true;
 
+			ShutdownFileWatcher ();
+
 			if (queryRunning) {
 				lock (queryLock) {
 					fileQueryQueue.Clear ();
@@ -108,8 +110,6 @@ namespace MonoDevelop.VersionControl
 
 			infoCache?.Dispose ();
 			infoCache = null;
-
-			ShutdownFileWatcher ();
 		}
 
 		public void Dispose ()
