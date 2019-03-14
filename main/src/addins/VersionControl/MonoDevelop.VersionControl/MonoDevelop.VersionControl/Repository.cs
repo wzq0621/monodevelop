@@ -1067,9 +1067,7 @@ namespace MonoDevelop.VersionControl
 
 		void ShutdownFileWatcher()
 		{
-			FileWatcherService.WatchDirectories (this, new HashSet<FilePath> {
-				null
-			}).Ignore ();
+			FileWatcherService.WatchDirectories (this, null).Ignore ();
 		}
 	}
 	

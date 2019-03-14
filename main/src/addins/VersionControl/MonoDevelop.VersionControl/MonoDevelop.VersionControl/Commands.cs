@@ -95,8 +95,8 @@ namespace MonoDevelop.VersionControl
 			Repository repo = null;
 			FilePath filePath = null;
 
-			if (IdeApp.ProjectOperations.CurrentSelectedItem as IFileItem != null) {
-				filePath = (IdeApp.ProjectOperations.CurrentSelectedItem as IFileItem).FileName;
+			if (IdeApp.ProjectOperations.CurrentSelectedItem is IFileItem fileItem) {
+				filePath = fileItem.FileName;
 			}
 
 			var currentSelectedWorkspaceItem = IdeApp.ProjectOperations.CurrentSelectedWorkspaceItem;
