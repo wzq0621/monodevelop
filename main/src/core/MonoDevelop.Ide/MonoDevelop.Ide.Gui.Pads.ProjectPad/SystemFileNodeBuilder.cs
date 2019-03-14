@@ -176,7 +176,19 @@ namespace MonoDevelop.Ide.Gui.Pads.ProjectPad
 						}
 						else {
 							Solution sol = node.GetParentDataItem (typeof(Solution), true) as Solution;
-							sol.RootFolder.Files.Add (file.Path);
+
+							var solutionFolder = sol.RootFolder;
+
+							if (solutionFolder != null) {
+								if (solutionFolder.IsRoot) {
+									// Don't allow adding files to the root folder. VS doesn't allow it
+									// If there is no existing folder, create one
+									solutionFolder = solutionFolder.ParentSolution.DefaultSolutionFolder;
+								}
+
+								solutionFolder.Files.Add (file.Path);
+							}
+
 							projects.Add (sol);
 						}
 					}

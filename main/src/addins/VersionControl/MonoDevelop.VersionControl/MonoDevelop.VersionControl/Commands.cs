@@ -5,6 +5,7 @@ using MonoDevelop.Ide;
 using MonoDevelop.Ide.Gui;
 using MonoDevelop.Core;
 using MonoDevelop.VersionControl.Views;
+using System.Linq;
 
 namespace MonoDevelop.VersionControl
 {
@@ -77,7 +78,7 @@ namespace MonoDevelop.VersionControl
 		}
 	}
 	
-	class FileVersionControlCommandHandler: CommandHandler
+	class FileVersionControlCommandHandler : CommandHandler
 	{
 		protected static VersionControlItemList GetItems ()
 		{
@@ -88,22 +89,37 @@ namespace MonoDevelop.VersionControl
 				list.Add (it);
 			return list;
 		}
-		
+
 		protected static VersionControlItem GetItem ()
 		{
+			Repository repo = null;
+			FilePath filePath = null;
+
+			if (IdeApp.ProjectOperations.CurrentSelectedItem as IFileItem != null) {
+				filePath = (IdeApp.ProjectOperations.CurrentSelectedItem as IFileItem).FileName;
+			}
+
+			var currentSelectedWorkspaceItem = IdeApp.ProjectOperations.CurrentSelectedWorkspaceItem;
+			if (currentSelectedWorkspaceItem != null) {
+				repo = VersionControlService.GetRepository (currentSelectedWorkspaceItem);
+			}
+
+			Project project = IdeApp.ProjectOperations.CurrentSelectedProject;
 			Document doc = IdeApp.Workbench.ActiveDocument;
-			if (doc == null || !doc.IsFile)
-				return null;
-			
-			Project project = doc.Project ?? IdeApp.ProjectOperations.CurrentSelectedProject;
-			if (project == null)
-				return null;
-			
-			Repository repo = VersionControlService.GetRepository (project);
+
+			if (doc != null) {
+				filePath = doc.FileName;
+				project = doc.Project;
+
+				if (repo == null) {
+					repo = VersionControlService.GetRepository (project);
+				}
+			}
+
 			if (repo == null || repo.VersionControlSystem == null || !repo.VersionControlSystem.IsInstalled)
 				return null;
-			
-			return new VersionControlItem (repo, project, doc.FileName, false, null);
+
+			return new VersionControlItem (repo, project, filePath, false, null);
 		}
 		
 		protected sealed override void Run ()
