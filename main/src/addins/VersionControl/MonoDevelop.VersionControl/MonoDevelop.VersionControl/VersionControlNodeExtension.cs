@@ -21,11 +21,12 @@ namespace MonoDevelop.VersionControl
 		
 		public override bool CanBuildNode (Type dataType)
 		{
-			//Console.Error.WriteLine(dataType);
-			return typeof(ProjectFile).IsAssignableFrom (dataType)
-				|| typeof(SystemFile).IsAssignableFrom (dataType)
-				|| typeof(ProjectFolder).IsAssignableFrom (dataType)
-				|| typeof(WorkspaceObject).IsAssignableFrom (dataType);
+			return typeof (ProjectFile).IsAssignableFrom (dataType)
+				|| typeof (SystemFile).IsAssignableFrom (dataType)
+				|| typeof (ProjectFolder).IsAssignableFrom (dataType)
+				|| typeof (WorkspaceObject).IsAssignableFrom (dataType)
+				|| typeof (SolutionFolder).IsAssignableFrom (dataType)
+				|| typeof (SolutionFolderFileNode).IsAssignableFrom (dataType);
 		}
 		
 		protected override void Initialize ()
@@ -225,9 +226,6 @@ namespace MonoDevelop.VersionControl
 			get { return typeof(AddinCommandHandler); }
 		}
 	}
-
-	
-
 	
 	class AddinCommandHandler : VersionControlCommandHandler 
 	{

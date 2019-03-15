@@ -92,34 +92,19 @@ namespace MonoDevelop.VersionControl
 
 		protected static VersionControlItem GetItem ()
 		{
-			Repository repo = null;
-			FilePath filePath = null;
-
-			if (IdeApp.ProjectOperations.CurrentSelectedItem is IFileItem fileItem) {
-				filePath = fileItem.FileName;
-			}
-
-			var currentSelectedWorkspaceItem = IdeApp.ProjectOperations.CurrentSelectedWorkspaceItem;
-			if (currentSelectedWorkspaceItem != null) {
-				repo = VersionControlService.GetRepository (currentSelectedWorkspaceItem);
-			}
-
-			Project project = IdeApp.ProjectOperations.CurrentSelectedProject;
 			Document doc = IdeApp.Workbench.ActiveDocument;
+			if (doc == null || !doc.IsFile)
+				return null;
 
-			if (doc != null) {
-				filePath = doc.FileName;
-				project = doc.Project;
+			Project project = doc.Project ?? IdeApp.ProjectOperations.CurrentSelectedProject;
+			if (project == null)
+				return null;
 
-				if (repo == null) {
-					repo = VersionControlService.GetRepository (project);
-				}
-			}
-
+			Repository repo = VersionControlService.GetRepository (project);
 			if (repo == null || repo.VersionControlSystem == null || !repo.VersionControlSystem.IsInstalled)
 				return null;
 
-			return new VersionControlItem (repo, project, filePath, false, null);
+			return new VersionControlItem (repo, project, doc.FileName, false, null);
 		}
 		
 		protected sealed override void Run ()
