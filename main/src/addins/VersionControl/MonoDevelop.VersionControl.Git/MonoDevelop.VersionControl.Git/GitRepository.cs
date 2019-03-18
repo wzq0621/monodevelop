@@ -831,7 +831,7 @@ namespace MonoDevelop.VersionControl.Git
 
 			// Initialize the repository
 			if (RootRepository == null) {
-				if (!RootPath.Combine (".git").IsDirectory)
+				if (!RootPath.Combine (GitVersionControl.GitExtension).IsDirectory)
 					RootRepository = new LibGit2Sharp.Repository (LibGit2Sharp.Repository.Init (RootPath));
 
 				RootRepository = new LibGit2Sharp.Repository (RootPath);
@@ -861,8 +861,8 @@ namespace MonoDevelop.VersionControl.Git
 				OnPushStatusError = delegate (PushStatusError e) {
 					RootRepository.Dispose ();
 					RootRepository = null;
-					if (RootPath.Combine (".git").IsDirectory)
-						Directory.Delete (RootPath.Combine (".git"), true);
+					if (RootPath.Combine (GitVersionControl.GitExtension).IsDirectory)
+						Directory.Delete (RootPath.Combine (GitVersionControl.GitExtension), true);
 					throw new VersionControlException (e.Message);
 				},
 				CredentialsProvider = (url, userFromUrl, types) => GitCredentials.TryGet (url, userFromUrl, types, credType)
